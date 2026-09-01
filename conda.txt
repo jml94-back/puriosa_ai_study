@@ -1,0 +1,6 @@
+conda create -n my_env python=3.12
+conda activate my_env
+conda deactivate
+conda remove -n my_env
+
+conda env list
