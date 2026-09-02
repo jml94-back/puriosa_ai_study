@@ -1,0 +1,27 @@
+Day1
+
+Conda 환경 설정
+conda create -n my_env python=3.12
+conda activate my_env
+conda deactivate
+conda remove -n my_env
+conda env list
+
+pip list
+pip install 
+pip uninstall
+
+tensorflow
+scikit-learn
+
+Day2
+
+0차원   데이터 1개  스칼라
+1차원   []        벡터
+2차원   [[],[]]   행렬
+3차원 이상         텐서
+
+Day3
+
+mse: (원래 값 - 각 예측값) 제곱 하고 다 더해서 n빵
+    제곱 하니까 1 미만의 값은 과소, 값이 클수록 과대 해질 듯?
