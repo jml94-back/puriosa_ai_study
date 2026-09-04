@@ -25,12 +25,12 @@ model.add(Dense(1))
 #3. 컴파일 훈련
 model.compile(loss = "mse",optimizer="adam")
 
-batch_size = 4
-start_time = time.time()
+batch_size = 4 #
+start_time = time.time() #
 
 history = model.fit(x_train,y_train,epochs=500, batch_size=batch_size)
 
-training_time = time.time() - start_time
+training_time = time.time() - start_time #
 
 #4. 평가 예측
 loss = model.evaluate(x_test,y_test)
@@ -39,6 +39,7 @@ print("loss:",loss)
 result = model.predict(np.array([11]))
 print("result:",result)
 
+#
 my_util.record_model_csv(
     model = model,
     data_shape=x_train.shape,

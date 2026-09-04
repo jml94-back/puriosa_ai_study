@@ -39,8 +39,8 @@ def create_list(num, matrix_shape, last_val, value_generator):
     result.append("],")
     return "".join(str(s) for s in result), last_val
 
-def create_random_metrix(matrix_shape, value_generator=create_sequential_values):
+def create_matrix(matrix_shape, value_generator=create_sequential_values):
     results, _ = create_list(0, matrix_shape, 0, value_generator)
     return results
 
-print(create_random_metrix([3,2,4]))
+print(create_matrix([3,2,4]))

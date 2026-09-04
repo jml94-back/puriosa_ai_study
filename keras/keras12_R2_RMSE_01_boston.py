@@ -17,12 +17,9 @@ random_num=0
 
 #2. 모델
 model = Sequential()
-model.add(Dense(48,input_dim=13))
-model.add(Dense(382))
-model.add(Dense(793))
-model.add(Dense(291))
-model.add(Dense(72))
+model.add(Dense(54,input_dim=13))
 model.add(Dense(29))
+model.add(Dense(42))
 model.add(Dense(1))
 
 
@@ -30,8 +27,8 @@ model.add(Dense(1))
 model.compile(loss="mse",optimizer="adam")
 start_time = time.time()
 
-batch_size=32
-history = model.fit(x_train, y_train, epochs = 650, batch_size = 32)
+batch_size=16
+history = model.fit(x_train, y_train, epochs = 350, batch_size = batch_size)
 
 train_time = time.time() - start_time
 
@@ -40,6 +37,23 @@ train_time = time.time() - start_time
 loss = model.evaluate(x_test,y_test)
 print(loss)
 
+y_predict = model.predict(x_test)
+
+from sklearn.metrics import r2_score, mean_squared_error
+
+r2 = r2_score(y_test, y_predict)
+print(r2)
+
+mse = mean_squared_error(y_test,y_predict)
+print(mse)
+
+def RMSE(y_test, y_predict): #rmse 함수 정의
+    return np.sqrt(mean_squared_error(y_test,y_predict))
+
+rmse = RMSE(y_test, y_predict)
+print(rmse)
+
+
 my_util.record_model_csv(
     model = model,
     data_shape = x_train.shape,
@@ -47,5 +61,6 @@ my_util.record_model_csv(
     batch_size = batch_size,
     history = history,
     training_time = train_time,
-    test_loss = loss
+    test_loss = loss,
+    r2_score = r2
 )

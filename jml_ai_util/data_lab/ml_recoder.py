@@ -3,10 +3,7 @@ import datetime
 import os
 import sys
 
-import numpy as np
-from sklearn.metrics import mean_squared_error
-
-def record_model_csv(model, data_shape, batch_size, history, training_time, test_loss, random_num="-1", r2_score="", csv_file_path="model_history_log.csv", train_ration = 0.7):
+def record_model_csv(model, data_shape, random_num, batch_size, history, training_time, test_loss, csv_file_path="model_history_log.csv"):
     # 1. 현재날짜시간
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -24,12 +21,14 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
     epochs = len(history.history['loss'])
 
     for layer in model.layers:
-        # 1. 레이어 타입 (예: Dense, Conv2D, Dropout 등)
+        # 레이어 이름 클래스명 추출 (예: 'Dense', 'Conv2D', 'Dropout' 등)
         layer_type = layer.__class__.__name__
 
-        # 2. 출력 노드 수/차원 구하기
+        # 출력 형태(output_shape)에서 마지막 차원(노드 수) 가져오기
+        # 일부 레이어는 output_shape이 list / TensorShape / None / 멀티출력일 수 있어서 안전하게 처리
         output_shape = getattr(layer, 'output_shape', None)
         if isinstance(output_shape, list):
+            # 다중 출력을 가질 경우 첫 번째 shape 선택
             output_shape = output_shape[0] if output_shape else None
         elif output_shape is not None:
             try:
@@ -45,43 +44,18 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
         elif hasattr(layer, 'filters') and layer.filters is not None:
             dim_str = str(layer.filters)
         else:
-            dim_str = ""
+            dim_str = "?"
 
-        # 3. Activation (활성화 함수) 및 레이어별 핵심 속성 추출
-        extra_info = ""
-        
-        # Activation 확인 (linear가 아닌 경우나 명시된 경우 표기)
-        if hasattr(layer, 'activation') and layer.activation is not None:
-            act_name = layer.activation.__name__
-            if act_name != 'linear':  # 기본값인 'linear'는 생략하고 특수한 활성화 함수만 표시
-                extra_info = f"({act_name})"
-        
-        # Dropout 레이어인 경우 비율(rate) 표시
-        if layer_type == 'Dropout' and hasattr(layer, 'rate'):
-            dim_str = f"({layer.rate})"
-
-        # Conv2D 레이어인 경우 커널 사이즈 표시 (예: 32(3x3))
-        if 'Conv' in layer_type and hasattr(layer, 'kernel_size'):
-            k_size = "x".join(map(str, layer.kernel_size))
-            extra_info = f"[{k_size}]"
-
-        # 최종 노드 및 속성 조합 (예: "3(relu)", "32[3x3]")
-        node_desc = f"{dim_str}{extra_info}".strip()
-
-        # 4. 이전 레이어와 비교하여 문자열 생성
+        # 이전 레이어와 같은 종류(Type)인 경우 -> 노드 수만 추가
         if layer_type == prev_layer_type:
-            structure_parts.append(node_desc)
+            structure_parts.append(dim_str)
+        # 다른 레이어 종류인 경우 -> '레이어타입 노드수' 형태로 추가
         else:
-            if node_desc:
-                structure_parts.append(f"{layer_type} {node_desc}")
-            else:
-                structure_parts.append(layer_type)
+            structure_parts.append(f"{layer_type} {dim_str}")
             prev_layer_type = layer_type
 
     # " -> " 로 연결
     model_structure = " -> ".join(structure_parts)
-
-    total_params = model.count_params()
     
     # 5. loss 함수 및 optimizer
     # (문자열로 컴파일된 경우와 객체로 컴파일된 경우를 모두 처리)
@@ -96,11 +70,10 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
     log_data = [
         current_time, file_name, data_shape, random_num, model_name, model_structure, 
         loss_func, optimizer_name, epochs, batch_size, round(training_time, 4), 
-        first_loss, last_loss, test_loss, r2_score, train_ration, total_params
+        first_loss, last_loss, test_loss
     ]
     
     # 파일이 존재하지 않으면 헤더(Header)를 먼저 작성
-    csv_file_path="./_data/record/"+csv_file_path
     file_exists = os.path.isfile(csv_file_path)
     
     with open(csv_file_path, mode='a', newline='', encoding='utf-8-sig') as f:
@@ -109,11 +82,8 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
             writer.writerow([
                 "time", "pyfile", "data_shape", "random_num", "model", "model_structure", 
                 "loss", "optimizer", "epochs", "batch_size", "train_second", 
-                "first_loss", "last_loss","test_loss", "r2_score", "train_ration","total_params"
+                "first loss", "last loss","test_loss"
             ])
         writer.writerow(log_data)
     
-    # print(f"모델 학습 정보가 '{csv_file_path}'에 기록되었습니다.")
-
-def RMSE(y_test, y_predict): #rmse 함수 정의
-    return np.sqrt(mean_squared_error(y_test,y_predict))
+    print(f"모델 학습 정보가 '{csv_file_path}'에 기록되었습니다.")
