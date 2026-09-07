@@ -36,3 +36,13 @@ Day 5
 
 회귀 모델 실습 정리
 
+Day 6
+
+fit(verbose)
+0 : 침묵
+1 : 디폴트
+2 : 프로그래스바 삭제
+3이상 : 에포만 나옴
+
+데이터 분리 train / (new) validation / test
+

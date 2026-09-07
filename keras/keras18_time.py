@@ -1,3 +1,4 @@
+# 17-val5 카피
 # https://www.kaggle.com/competitions/bike-sharing-demand/data
 import pandas as pd
 import numpy as np
@@ -35,17 +36,10 @@ y = train_csv["count"]
 #### year, time 뽑아내보기
 
 rand_num = 8674
-x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.7,random_state=rand_num)
+x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.2,random_state=rand_num)
 
 #2. 모델
 model = Sequential([keras.Input(shape=(10,))])
-# model.add(Dense(32, activation="relu"))
-# model.add(Dense(64))
-# model.add(Dense(128, activation="relu"))
-# model.add(Dense(32))
-# model.add(Dense(64))
-# model.add(Dense(128, activation="relu"))
-# model.add(Dense(32, activation="relu"))
 model.add(Dense(128, activation="relu"))
 model.add(Dense(32, activation="relu"))
 model.add(Dense(16, activation="relu"))
@@ -58,11 +52,12 @@ model.add(Dense(1))
 model.compile(loss = "mse",optimizer="adam")
 
 batch_size = 128
-start_time=time.time()
+start_time=time.time() #현재시간(=시작시간) 반환
 
-history = model.fit(x_train,y_train, epochs=700, batch_size=batch_size)
+history = model.fit(x_train,y_train, epochs=50, batch_size=batch_size, validation_split=0.2)
 
-train_time = time.time() - start_time
+train_time = time.time() - start_time #현재시간(=종료시간) - 시작시간 = 훈련 실행 시간
+# print("훈련시간:",round(train_time,2))
 
 #4. 평가 예측
 loss = model.evaluate(x_test,y_test)
@@ -83,8 +78,7 @@ my_util.record_model_csv(
     test_loss = loss,
     r2_score = r2
 )
+# y_submint = model.predict(test_csv)
 
-y_submint = model.predict(test_csv)
-
-submit_csv['count'] = y_submint
-submit_csv.to_csv(path + "/submit/submission_0907_1.csv")
+# submit_csv['count'] = y_submint
+# submit_csv.to_csv(path + "/submit/submission_0907_2.csv")

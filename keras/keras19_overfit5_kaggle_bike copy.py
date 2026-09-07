@@ -8,6 +8,7 @@ from tensorflow import keras
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, root_mean_squared_log_error
+from tensorflow.keras.callbacks import EarlyStopping
 
 import time
 import my_util
@@ -35,7 +36,7 @@ y = train_csv["count"]
 #### year, time 뽑아내보기
 
 rand_num = 8674
-x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.7,random_state=rand_num)
+x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.2,random_state=rand_num)
 
 #2. 모델
 model = Sequential([keras.Input(shape=(10,))])
@@ -48,19 +49,25 @@ model = Sequential([keras.Input(shape=(10,))])
 # model.add(Dense(32, activation="relu"))
 model.add(Dense(128, activation="relu"))
 model.add(Dense(32, activation="relu"))
-model.add(Dense(16, activation="relu"))
+model.add(Dense(64, activation="relu"))
 model.add(Dense(128, activation="relu"))
 model.add(Dense(64, activation="relu"))
 model.add(Dense(64, activation="relu"))
+model.add(Dense(32, activation="relu"))
 model.add(Dense(1))
 
 #3. 컴파일 훈련
 model.compile(loss = "mse",optimizer="adam")
 
 batch_size = 128
+
+es = EarlyStopping(
+    monitor = 'val_loss', mode = "min", 
+    patience = 50, restore_best_weights= True, 
+)
 start_time=time.time()
 
-history = model.fit(x_train,y_train, epochs=700, batch_size=batch_size)
+history = model.fit(x_train,y_train, epochs=300000, batch_size=batch_size, callbacks = [es], validation_split=0.2)
 
 train_time = time.time() - start_time
 
@@ -87,4 +94,17 @@ my_util.record_model_csv(
 y_submint = model.predict(test_csv)
 
 submit_csv['count'] = y_submint
-submit_csv.to_csv(path + "/submit/submission_0907_1.csv")
+submit_csv.to_csv(path + "/submit/submission_0907_3.csv")
+
+import matplotlib.pyplot as plt
+plt.figure(figsize=(9,6))
+plt.rc('font', family='Malgun Gothic')
+plt.plot(history.history["loss"][3:], color="red", label = "loss") #loss. y값만 넣었을때, x 자동 시간 순.
+plt.plot(history.history["val_loss"][3:], color="blue", label = "val_loss") #val_loss
+plt.legend(loc="upper right") #라벨표시 우상단
+plt.title("kaggle bike Loss")
+plt.xlabel("epoch")
+plt.ylabel("loss")
+plt.grid() #격자표시 추가
+# plt.plot(x, result, color="red")
+plt.show()
