@@ -5,11 +5,13 @@ import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow import keras
+from tensorflow.keras.callbacks import EarlyStopping
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, root_mean_squared_log_error
 
 import time
+import datetime
 import my_util
 
 #1. 데이터
@@ -23,10 +25,10 @@ submit_csv = pd.read_csv(path+"/sampleSubmission.csv", index_col = 0)
 # print(train_csv.describe())
 # print(train_csv.isna().sum()) #결측치 확인
 
-train_csv["year"] = pd.to_datetime(train_csv.index).year
+# train_csv["year"] = pd.to_datetime(train_csv.index).year
 train_csv["hour"] = pd.to_datetime(train_csv.index).hour
 
-test_csv["year"] = pd.to_datetime(test_csv.index).year
+# test_csv["year"] = pd.to_datetime(test_csv.index).year
 test_csv["hour"] = pd.to_datetime(test_csv.index).hour
 
 x = train_csv.drop(["datetime","casual","registered","count"], axis=1)
@@ -34,24 +36,23 @@ y = train_csv["count"]
 
 #### year, time 뽑아내보기
 
-rand_num = 8674
+rand_num = 2875438
 x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.2,random_state=rand_num)
 
 #2. 모델
-model = Sequential([keras.Input(shape=(10,))])
-# model.add(Dense(32, activation="relu"))
-# model.add(Dense(64))
-# model.add(Dense(128, activation="relu"))
-# model.add(Dense(32))
-# model.add(Dense(64))
-# model.add(Dense(128, activation="relu"))
-# model.add(Dense(32, activation="relu"))
+model = Sequential([keras.Input(shape=(9,))])
 model.add(Dense(128))
+model.add(Dense(32))
+model.add(Dense(64, activation="relu"))
+model.add(Dense(128, activation="relu"))
+model.add(Dense(64, activation="relu"))
+model.add(Dense(64))
+model.add(Dense(128, activation="relu"))
+model.add(Dense(64, activation="relu"))
 model.add(Dense(32, activation="relu"))
-model.add(Dense(64, activation="relu"))
+model.add(Dense(128, activation="relu"))
+model.add(Dense(16, activation="relu"))
 model.add(Dense(128))
-model.add(Dense(64, activation="relu"))
-model.add(Dense(64, activation="relu"))
 model.add(Dense(32, activation="relu"))
 model.add(Dense(1))
 
@@ -59,9 +60,14 @@ model.add(Dense(1))
 model.compile(loss = "mse",optimizer="adam")
 
 batch_size = 128
+
+es = EarlyStopping(
+    monitor = 'val_loss', mode = "min", 
+    patience = 100, restore_best_weights= True, 
+)
 start_time=time.time()
 
-history = model.fit(x_train,y_train, epochs=3000, batch_size=batch_size, validation_split=0.2)
+history = model.fit(x_train,y_train, epochs=30000, batch_size=batch_size, validation_split=0.2, callbacks = [es])
 
 train_time = time.time() - start_time
 
@@ -70,6 +76,20 @@ loss = model.evaluate(x_test,y_test)
 
 y_pred = model.predict(x_test)
 r2 = r2_score(y_test, y_pred)
+
+import matplotlib.pyplot as plt
+plt.figure(figsize=(9,6))
+plt.rc('font', family='Malgun Gothic')
+plt.scatter(y_test,y_pred, color="red", label = "loss") #loss. y값만 넣었을때, x 자동 시간 순.
+# plt.plot(history.history["val_loss"][3:], color="blue", label = "val_loss") #val_loss
+plt.legend(loc="upper right") #라벨표시 우상단
+plt.title("kaggle bike Loss")
+plt.xlabel("epoch")
+plt.ylabel("loss")
+plt.grid() #격자표시 추가
+# plt.plot(x, result, color="red")
+plt.show()
+
 rmsle = root_mean_squared_log_error(y_true=y_test,y_pred=y_pred)
 print("r2:",r2)
 print("rmsle:",rmsle)
@@ -85,20 +105,8 @@ my_util.record_model_csv(
     r2_score = r2
 )
 
-# y_submint = model.predict(test_csv)
+y_submint = model.predict(test_csv)
 
-# submit_csv['count'] = y_submint
-# submit_csv.to_csv(path + "/submit/submission_0907_2.csv")
+submit_csv['count'] = y_submint
+submit_csv.to_csv(path + "/submit/submission_"+datetime.datetime.now().strftime("%m%d_%H%M")+".csv")
 
-import matplotlib.pyplot as plt
-plt.figure(figsize=(9,6))
-plt.rc('font', family='Malgun Gothic')
-plt.scatter(y_test,y_pred, color="red", label = "loss") #loss. y값만 넣었을때, x 자동 시간 순.
-# plt.plot(history.history["val_loss"][3:], color="blue", label = "val_loss") #val_loss
-plt.legend(loc="upper right") #라벨표시 우상단
-plt.title("kaggle bike Loss")
-plt.xlabel("epoch")
-plt.ylabel("loss")
-plt.grid() #격자표시 추가
-# plt.plot(x, result, color="red")
-plt.show()

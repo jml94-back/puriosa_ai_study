@@ -1,10 +1,15 @@
+# 데이터셋 다운로드 안 될 때 디버그
+# import ssl
+# ssl._create_default_https_context = ssl._create_unverified_context
+
+# 데이터셋 info 보고 싶어서 사용
+# import pandas
 import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow import keras
 
-from sklearn.model_selection import train_test_split
-from sklearn.datasets import fetch_california_housing
+from tensorflow.keras.datasets import boston_housing
 from sklearn.metrics import r2_score
 
 import time
@@ -12,21 +17,10 @@ import my_util
 
 #1. 데이터
 #캘리포니아 집값 정보
-datasets = fetch_california_housing(as_frame=True)
+(x_train, y_train), (x_test,y_test) = boston_housing.load_data()
 
-# datasets = datasets.frame
-# datasets.info()
-
-x = datasets.data
-y = datasets.target
-
-print(x.shape)
-
-random_num = 30956
-x_train,x_test,y_train,y_test = train_test_split(x,y,
-                                                 train_size=0.7,
-                                                 random_state=random_num
-                                                 )
+# print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)
+random_num=0
 
 #2. 모델
 model = Sequential([keras.Input(shape=(8,))])
@@ -84,7 +78,7 @@ plt.rc('font', family='Malgun Gothic')
 plt.plot(history.history["loss"][2:], color="red", label = "loss") #loss. y값만 넣었을때, x 자동 시간 순.
 plt.plot(history.history["val_loss"][2:], color="blue", label = "val_loss") #val_loss
 plt.legend(loc="upper right") #라벨표시 우상단
-plt.title("캘리포니아 Loss")
+plt.title("보스턴 Loss")
 plt.xlabel("epoch")
 plt.ylabel("loss")
 plt.grid() #격자표시 추가

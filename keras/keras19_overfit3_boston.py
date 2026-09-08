@@ -61,7 +61,7 @@ plt.rc('font', family='Malgun Gothic')
 plt.plot(history.history["loss"][3:], color="red", label = "loss") #loss. y값만 넣었을때, x 자동 시간 순.
 plt.plot(history.history["val_loss"][3:], color="blue", label = "val_loss") #val_loss
 plt.legend(loc="upper right") #라벨표시 우상단
-plt.title("캘리포니아 Loss")
+plt.title("보스턴 Loss")
 plt.xlabel("epoch")
 plt.ylabel("loss")
 plt.grid() #격자표시 추가

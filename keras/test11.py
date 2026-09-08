@@ -89,13 +89,13 @@ my_util.record_model_csv(
 import matplotlib.pyplot as plt
 plt.figure(figsize=(9,6))
 plt.rc('font', family='Malgun Gothic')
-plt.plot(y_pred, color="red", label = "predict") #loss. y값만 넣었을때, x 자동 시간 순.
-plt.plot(y_test, color="blue", label = "expect") #loss. y값만 넣었을때, x 자동 시간 순.
+plt.scatter(y_test,y_pred, color="red", label = "predict") #loss. y값만 넣었을때, x 자동 시간 순.
+# plt.plot(y_test, color="blue", label = "expect") #loss. y값만 넣었을때, x 자동 시간 순.
 # plt.plot(history.history["val_loss"][3:], color="blue", label = "val_loss") #val_loss
 plt.legend(loc="upper right") #라벨표시 우상단
-plt.title("제곱수 Loss")
-plt.xlabel("epoch")
-plt.ylabel("loss")
+plt.title("x1*x2*x3 Loss")
+plt.xlabel("y_test")
+plt.ylabel("y_pred")
 plt.grid() #격자표시 추가
 # plt.plot(x, result, color="red")
 plt.show()
