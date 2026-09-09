@@ -30,9 +30,8 @@ x = train_csv.drop(["target"], axis=1)
 y= train_csv["target"]
 
 print(np.unique(y, return_counts=True))
-exit()
 
-rand_num = 2875438
+rand_num = 90
 train_ration = 0.8
 x_train, x_test, y_train, y_test = train_test_split(x,y,train_size=train_ration,random_state=rand_num,stratify=y)
 
@@ -83,6 +82,7 @@ my_util.record_model_csv(
 )
 
 y_submint = model.predict(test_csv)
+y_submint = np.round(y_submint)
 
 submit_csv['target'] = y_submint
 submit_csv.to_csv(path + "/submit/submission_"+datetime.datetime.now().strftime("%m%d_%H%M")+".csv")

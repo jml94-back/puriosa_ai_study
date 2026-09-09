@@ -17,7 +17,7 @@ import random
 #1. 데이터
 x = np.array([ random.randrange(100, 1000) for s in range(10000)])
 
-y = np.array([ x[i]*x[i] for i in range(10000)])
+y = np.array([ -1*x[i]*x[i]+2500*x[i] for i in range(10000)])
 
 print(x.shape,y.shape)
 
@@ -25,22 +25,19 @@ rand_num = 8674
 x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.2,random_state=rand_num)
 print(x_train.shape, x_test.shape, y_train.shape, y_test.shape)
 
+
+x_test = np.array([ random.randrange(1000, 10000) for s in range(10)])
+
+y_test = np.array([ -1*x[i]*x[i]+2500*x[i] for i in range(10)])
 #2. 모델
 model = Sequential([keras.Input(shape=(1,))])
-# model.add(Dense(32, activation="relu"))
-# model.add(Dense(64))
-# model.add(Dense(128, activation="relu"))
-# model.add(Dense(32))
-# model.add(Dense(64))
-# model.add(Dense(128, activation="relu"))
-# model.add(Dense(32, activation="relu"))
 model.add(Dense(128))
 model.add(Dense(32, activation="relu"))
 model.add(Dense(64, activation="relu"))
 model.add(Dense(128))
 model.add(Dense(64, activation="relu"))
-model.add(Dense(64, activation="relu"))
-model.add(Dense(32, activation="relu"))
+model.add(Dense(64))
+model.add(Dense(32))
 model.add(Dense(1))
 
 #3. 컴파일 훈련
@@ -83,6 +80,8 @@ my_util.record_model_csv(
 # submit_csv['count'] = y_submint
 # submit_csv.to_csv(path + "/submit/submission_0907_2.csv")
 
+print(x_test,y_test)
+
 import matplotlib.pyplot as plt
 plt.figure(figsize=(9,6))
 plt.rc('font', family='Malgun Gothic')
@@ -91,8 +90,8 @@ plt.scatter(x_test,y_pred, color="red", label = "predict") #loss. y값만 넣었
 # plt.plot(history.history["val_loss"][3:], color="blue", label = "val_loss") #val_loss
 plt.legend(loc="upper right") #라벨표시 우상단
 plt.title("제곱수 Loss")
-plt.xlabel("epoch")
-plt.ylabel("loss")
+plt.xlabel("x")
+plt.ylabel("y")
 plt.grid() #격자표시 추가
 # plt.plot(x, result, color="red")
 plt.show()

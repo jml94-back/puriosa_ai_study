@@ -14,12 +14,12 @@ import time
 import my_util
 
 #1.data
-datastes = load_breast_cancer()
+datasets = load_breast_cancer()
 # print(datastes.DESCR)
 # print(datastes.feature_names)
 
-x = datastes.data
-y = datastes.target
+x = datasets.data
+y = datasets.target
 
 # print(type(datastes), type(y)) #sklearn.utils._bunch.Bunch, numpy.ndarray
 # print(x.shape, y.shape)
