@@ -1,0 +1,80 @@
+import numpy as np
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.callbacks import EarlyStopping
+
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import fetch_california_housing
+from sklearn.metrics import r2_score
+from sklearn.preprocessing import MinMaxScaler, minmax_scale
+
+import time
+import my_util
+
+#1. 데이터
+#캘리포니아 집값 정보
+datasets = fetch_california_housing(as_frame=True)
+
+# datasets = datasets.frame
+# datasets.info()
+
+x = datasets.data
+y = datasets.target
+
+# min max scaler
+# X - min / Max- min -> 0~1 사이에 수렴
+# mmscaler = MinMaxScaler()
+# mmscaler.fit(x)
+# x = mmscaler.transform(x)
+x = minmax_scale(x)
+# print(np.min(x), np.max(x))
+# exit()
+print(x.shape)
+
+random_num = 30956
+x_train,x_test,y_train,y_test = train_test_split(x,y,
+                                                 train_size=0.7,
+                                                 random_state=random_num
+                                                 )
+
+#2. 모델
+model = Sequential()
+model.add(Dense(13, input_shape=x_train[0].shape))
+model.add(Dense(38, activation="relu"))
+model.add(Dense(27, activation="relu"))
+model.add(Dense(19, activation="relu"))
+model.add(Dense(7, activation="relu"))
+model.add(Dense(1))
+
+#3. 컴파일 훈련
+model.compile(loss="mse",optimizer="adam")
+batch_size = 128
+
+es = EarlyStopping(
+    monitor = 'val_loss', mode = "min", 
+    patience = 20, restore_best_weights= True, 
+)
+start_time = time.time()
+
+history = model.fit(x_train,y_train, epochs = 100000, batch_size= batch_size, validation_split=0.33,callbacks = [es],)
+
+train_time = time.time() - start_time
+
+#4. 평가 예측
+loss = model.evaluate(x_test, y_test)
+print(loss)
+
+y_pred = model.predict(x_test)
+print("result:",y_pred)
+r2 = r2_score(y_test, y_pred)
+
+my_util.record_model_csv(
+    model = model,
+    data_shape = x_train.shape,
+    random_num = random_num,
+    batch_size = batch_size,
+    history = history,
+    training_time = train_time,
+    test_loss = loss,
+    r2_score=r2
+)

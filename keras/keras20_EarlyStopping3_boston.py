@@ -16,7 +16,7 @@ import time
 import my_util
 
 #1. 데이터
-#캘리포니아 집값 정보
+#보스턴 집값 정보
 (x_train, y_train), (x_test,y_test) = boston_housing.load_data()
 
 # print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)

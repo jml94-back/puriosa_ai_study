@@ -95,8 +95,8 @@ def run_train(nodes, activations):
 
 if __name__ == '__main__':
     # 1. 노드 수 및 활성화 함수 후보 정의
-    node_candidates = [ 256, 128, 64, 32]
-    base_activations = ['relu','relu','relu','relu','relu','relu', 'linear','linear','linear']
+    node_candidates = [ 32, 64, 128, 256]
+    base_activations = ['gelu','gelu','gelu','relu','relu','relu', 'linear','linear',"swish","swish","swish","swish"]
 
     # 2. 8개 층에 대한 각각의 조합 생성
     node_combinations = list(itertools.product(node_candidates, repeat=8))

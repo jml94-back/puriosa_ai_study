@@ -6,51 +6,48 @@ from tensorflow.keras.layers import Dense
 from tensorflow import keras
 from tensorflow.keras.callbacks import EarlyStopping
 
-from sklearn.datasets import load_iris
+from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler,MaxAbsScaler
+from sklearn.datasets import fetch_covtype
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+
 
 import time
 import my_util
 
-#1. 데이터
-datasets = load_iris()
-# print(datasets.DESCR)
+datasets = fetch_covtype()
 
-x = datasets.data
-y = datasets.target
+x=datasets.data
+y=datasets.target
 
-# one hot encoding
-# 0 부터 시작
-# from tensorflow.keras.utils import to_categorical
-# y = to_categorical(y)
+print(x.shape, y.shape) #(178, 13) (178,)
+print(np.unique(y, return_counts=True))
 
-# pandas
-# y = pd.get_dummies(y, dtype=int)
+y = pd.get_dummies(y)
 
-# sklearn
-from sklearn.preprocessing import OneHotEncoder
-encoder = OneHotEncoder(sparse_output=False) #sparse_output 끄기
-y = encoder.fit_transform(y.reshape(-1, 1)) #reshape는 내용,순서가 바뀌면 안됨
-
-# print(x.shape, y.shape)  #(150, 4) (150,)
-# print(y)
-# exit()
-# print(np.unique(y, return_counts=True)) #(array([0, 1, 2]), array([50, 50, 50]))
-rand_num = 425
+rand_num = 90
 train_ration = 0.8
 x_train, x_test, y_train, y_test = train_test_split(x,y, train_size=train_ration, random_state=rand_num, stratify=y)
 
+# scaler = MinMaxScaler()
+# scaler = StandardScaler()
+# scaler = MaxAbsScaler()
+scaler = RobustScaler()
+
+scaler.fit(x_train)
+x_train = scaler.transform(x_train)
+x_test = scaler.transform(x_test)
+
 #2. 모델
-model = Sequential([keras.Input(shape=(4,))])
-model.add(Dense(16, activation="linear"))
-model.add(Dense(32, activation="relu"))
-model.add(Dense(128, activation="linear"))
-model.add(Dense(128, activation="relu"))
-model.add(Dense(128, activation="relu"))
-model.add(Dense(32, activation="linear"))
+model = Sequential([keras.Input(shape=(54,))])
+model.add(Dense(128, activation="swish"))
 model.add(Dense(64, activation="relu"))
-model.add(Dense(3, activation="softmax"))
+model.add(Dense(128))
+model.add(Dense(128, activation="relu"))
+model.add(Dense(32))
+model.add(Dense(64, activation="relu"))
+model.add(Dense(7, activation="softmax"))
+
 
 #3. 컴파일 훈련
 model.compile(loss = "categorical_crossentropy", optimizer = "adam", metrics=["acc"])
@@ -60,7 +57,7 @@ es = EarlyStopping(
     patience = 50, restore_best_weights= True, 
 )
 
-batch_size = 8
+batch_size = 4096
 start_time = time.time()
 
 history = model.fit(x_train,y_train, epochs=30000, batch_size=batch_size, validation_split=0.2, callbacks = [es])
@@ -74,6 +71,7 @@ y_pred = model.predict(x_test)
 y_pred = np.argmax(y_pred,axis=1)
 y_test = np.argmax(y_test,axis=1)
 acc = accuracy_score(y_test,y_pred)
+print(y_pred)
 print(acc)
 
 my_util.record_model_csv(
@@ -85,5 +83,9 @@ my_util.record_model_csv(
     training_time = train_time,
     test_loss = loss,
     r2_score = acc,
-    train_ration = train_ration
+    train_ration = train_ration,
+    csv_file_path= "covtype.csv"
 )
+
+
+#######acc 93   0.9358880579675224

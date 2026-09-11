@@ -2,10 +2,12 @@ import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow import keras
+from tensorflow.keras.callbacks import EarlyStopping
 
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_diabetes
 from sklearn.metrics import r2_score
+from sklearn.preprocessing import MinMaxScaler, RobustScaler,StandardScaler, MaxAbsScaler
 
 import time
 import my_util
@@ -19,6 +21,14 @@ y = datasets.target
 random_num = 273
 x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.7,random_state=random_num)
 
+# scaler = MinMaxScaler()
+# scaler = StandardScaler()
+# scaler = MaxAbsScaler()
+scaler = RobustScaler()
+
+scaler.fit(x_train)
+x_train = scaler.transform(x_train)
+x_test = scaler.transform(x_test)
 
 #2. 모델
 model = Sequential([keras.Input(shape=(10,))])
@@ -35,7 +45,6 @@ model.compile(loss="mse",optimizer="adam")
 batch_size = 128
 start_time = time.time()
 
-from tensorflow.keras.callbacks import EarlyStopping
 es = EarlyStopping(
     monitor = 'val_loss', mode = "min", 
     patience = 20, restore_best_weights= True, 
@@ -50,10 +59,10 @@ train_time = time.time() - start_time
 
 #4. 평가 예측
 loss = model.evaluate(x_test, y_test)
-print(loss)
+# print(loss)
 
 y_pred = model.predict(x_test)
-print("result:",y_pred)
+# print("result:",y_pred)
 r2 = r2_score(y_test, y_pred)
 
 my_util.record_model_csv(
@@ -64,21 +73,22 @@ my_util.record_model_csv(
     history = history,
     training_time = train_time,
     test_loss = loss,
-    r2_score=r2
+    r2_score=r2,
+    csv_file_path="diabetes.csv",
 )
 
 # print("########################history##########################")
 # print(history.history)
 
-import matplotlib.pyplot as plt
-plt.figure(figsize=(9,6))
-plt.rc('font', family='Malgun Gothic')
-plt.plot(history.history["loss"][3:], color="red", label = "loss") #loss. y값만 넣었을때, x 자동 시간 순.
-plt.plot(history.history["val_loss"][3:], color="blue", label = "val_loss") #val_loss
-plt.legend(loc="upper right") #라벨표시 우상단
-plt.title("당뇨병 Loss")
-plt.xlabel("epoch")
-plt.ylabel("loss")
-plt.grid() #격자표시 추가
-# plt.plot(x, result, color="red")
-plt.show()
+# import matplotlib.pyplot as plt
+# plt.figure(figsize=(9,6))
+# plt.rc('font', family='Malgun Gothic')
+# plt.plot(history.history["loss"][3:], color="red", label = "loss") #loss. y값만 넣었을때, x 자동 시간 순.
+# plt.plot(history.history["val_loss"][3:], color="blue", label = "val_loss") #val_loss
+# plt.legend(loc="upper right") #라벨표시 우상단
+# plt.title("당뇨병 Loss")
+# plt.xlabel("epoch")
+# plt.ylabel("loss")
+# plt.grid() #격자표시 추가
+# # plt.plot(x, result, color="red")
+# plt.show()

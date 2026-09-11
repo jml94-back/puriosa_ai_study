@@ -21,7 +21,7 @@ x = datasets.data
 y = datasets.target
 
 # one hot encoding
-# 0 부터 시작
+# tensorflow  단점: 0 이 없어도 0 부터 시작
 # from tensorflow.keras.utils import to_categorical
 # y = to_categorical(y)
 
@@ -33,31 +33,27 @@ from sklearn.preprocessing import OneHotEncoder
 encoder = OneHotEncoder(sparse_output=False) #sparse_output 끄기
 y = encoder.fit_transform(y.reshape(-1, 1)) #reshape는 내용,순서가 바뀌면 안됨
 
-# print(x.shape, y.shape)  #(150, 4) (150,)
-# print(y)
-# exit()
-# print(np.unique(y, return_counts=True)) #(array([0, 1, 2]), array([50, 50, 50]))
 rand_num = 425
 train_ration = 0.8
 x_train, x_test, y_train, y_test = train_test_split(x,y, train_size=train_ration, random_state=rand_num, stratify=y)
 
 #2. 모델
-model = Sequential([keras.Input(shape=(4,))])
-model.add(Dense(16, activation="linear"))
+model = Sequential()#[keras.Input(shape=(4,))])
+model.add(Dense(16, input_shape = x_train[0].shape, activation="relu"))
+model.add(Dense(16, activation="relu"))
 model.add(Dense(32, activation="relu"))
-model.add(Dense(128, activation="linear"))
 model.add(Dense(128, activation="relu"))
 model.add(Dense(128, activation="relu"))
-model.add(Dense(32, activation="linear"))
-model.add(Dense(64, activation="relu"))
 model.add(Dense(3, activation="softmax"))
+
+exit()
 
 #3. 컴파일 훈련
 model.compile(loss = "categorical_crossentropy", optimizer = "adam", metrics=["acc"])
 
 es = EarlyStopping(
     monitor = 'val_loss', mode = "min", 
-    patience = 50, restore_best_weights= True, 
+    patience = 5, restore_best_weights= True, 
 )
 
 batch_size = 8
@@ -66,6 +62,9 @@ start_time = time.time()
 history = model.fit(x_train,y_train, epochs=30000, batch_size=batch_size, validation_split=0.2, callbacks = [es])
 
 train_time = time.time() - start_time
+
+print(model.input_shape)
+exit()
 
 #4. 평가 예측
 loss = model.evaluate(x_test,y_test)

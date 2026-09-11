@@ -23,8 +23,11 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
     # 5. epochs 추출
     epochs = len(history.history['loss'])
 
+    structure_parts = []
+    prev_layer_type = None
+
     for layer in model.layers:
-        # 1. 레이어 타입 (예: Dense, Conv2D, Dropout 등)
+        # 1. 레이어 타입 (예: Dense, Conv2D, Dropout, PReLU 등)
         layer_type = layer.__class__.__name__
 
         # 2. 출력 노드 수/차원 구하기
@@ -50,22 +53,32 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
         # 3. Activation (활성화 함수) 및 레이어별 핵심 속성 추출
         extra_info = ""
         
-        # Activation 확인 (linear가 아닌 경우나 명시된 경우 표기)
+        # Activation 확인 (안전한 이름 추출 로직)
         if hasattr(layer, 'activation') and layer.activation is not None:
-            act_name = layer.activation.__name__
-            if act_name != 'linear':  # 기본값인 'linear'는 생략하고 특수한 활성화 함수만 표시
+            act = layer.activation
+            # activation이 객체/클래스인 경우 (e.g. PReLU, LeakyReLU 객체)
+            if hasattr(act, '__class__') and act.__class__.__name__ != 'function':
+                act_name = act.__class__.__name__.lower()
+            # 일반 함수인 경우 (e.g. relu, sigmoid)
+            elif hasattr(act, '__name__'):
+                act_name = act.__name__.lower()
+            else:
+                act_name = str(act).lower()
+
+            # 'linear'가 아닌 경우 표기
+            if act_name != 'linear':
                 extra_info = f"({act_name})"
-        
+
         # Dropout 레이어인 경우 비율(rate) 표시
         if layer_type == 'Dropout' and hasattr(layer, 'rate'):
             dim_str = f"({layer.rate})"
 
-        # Conv2D 레이어인 경우 커널 사이즈 표시 (예: 32(3x3))
+        # Conv2D 레이어인 경우 커널 사이즈 표시 (예: 32[3x3])
         if 'Conv' in layer_type and hasattr(layer, 'kernel_size'):
             k_size = "x".join(map(str, layer.kernel_size))
-            extra_info = f"[{k_size}]"
+            extra_info = f"[{k_size}]{extra_info}"
 
-        # 최종 노드 및 속성 조합 (예: "3(relu)", "32[3x3]")
+        # 최종 노드 및 속성 조합
         node_desc = f"{dim_str}{extra_info}".strip()
 
         # 4. 이전 레이어와 비교하여 문자열 생성
@@ -89,8 +102,8 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
     optimizer_name = model.optimizer.name if hasattr(model.optimizer, 'name') else type(model.optimizer).__name__
     
     # 6. first loss, last loss
-    first_loss = history.history['loss'][0]
-    last_loss = history.history['loss'][-1]
+    first_loss = history.history.get('val_loss')[0] if history.history.get('val_loss') else history.history['loss'][0]
+    last_loss = history.history.get('val_loss')[-1] if history.history.get('val_loss') else history.history['loss'][-1]
     
     # CSV에 기록할 데이터 리스트
     log_data = [

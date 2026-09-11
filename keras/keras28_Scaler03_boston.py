@@ -3,25 +3,32 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow import keras
 
-from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_diabetes
+from tensorflow.keras.datasets import boston_housing
 from sklearn.metrics import r2_score
+from sklearn.preprocessing import MinMaxScaler, RobustScaler,StandardScaler,MaxAbsScaler
 
 import time
 import my_util
 
 #1. 데이터
-datasets = load_diabetes()
+#보스턴 집값 정보
+(x_train, y_train), (x_test,y_test) = boston_housing.load_data()
 
-x = datasets.data
-y = datasets.target
+# print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)
+random_num=0
 
-random_num = 273
-x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.7,random_state=random_num)
+# scaler = MinMaxScaler()
+# scaler = StandardScaler()
+# scaler = MaxAbsScaler()
+scaler = RobustScaler()
+
+scaler.fit(x_train)
+x_train = scaler.transform(x_train)
+x_test = scaler.transform(x_test)
 
 
 #2. 모델
-model = Sequential([keras.Input(shape=(10,))])
+model = Sequential([keras.Input(shape=x_train[0].shape)])
 model.add(Dense(64))
 model.add(Dense(16))
 model.add(Dense(32))
@@ -53,7 +60,7 @@ loss = model.evaluate(x_test, y_test)
 print(loss)
 
 y_pred = model.predict(x_test)
-print("result:",y_pred)
+# print("result:",y_pred)
 r2 = r2_score(y_test, y_pred)
 
 my_util.record_model_csv(
@@ -64,21 +71,6 @@ my_util.record_model_csv(
     history = history,
     training_time = train_time,
     test_loss = loss,
-    r2_score=r2
+    r2_score=r2,
+    csv_file_path="boston.csv",
 )
-
-# print("########################history##########################")
-# print(history.history)
-
-import matplotlib.pyplot as plt
-plt.figure(figsize=(9,6))
-plt.rc('font', family='Malgun Gothic')
-plt.plot(history.history["loss"][3:], color="red", label = "loss") #loss. y값만 넣었을때, x 자동 시간 순.
-plt.plot(history.history["val_loss"][3:], color="blue", label = "val_loss") #val_loss
-plt.legend(loc="upper right") #라벨표시 우상단
-plt.title("당뇨병 Loss")
-plt.xlabel("epoch")
-plt.ylabel("loss")
-plt.grid() #격자표시 추가
-# plt.plot(x, result, color="red")
-plt.show()
