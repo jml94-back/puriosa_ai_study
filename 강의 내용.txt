@@ -55,3 +55,5 @@ train_test_split( stratify = y) y를 값에 따라 같은 비율로 나눔
 Day 8
 다중분류
 OneHot Encoding to_categorical(keras)
+
+relu - 배치 노말라이제이션
