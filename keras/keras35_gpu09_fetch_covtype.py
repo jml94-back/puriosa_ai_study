@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Dense,Dropout, Input
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow import keras
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 
@@ -43,41 +43,20 @@ x_train = scaler.transform(x_train)
 x_test = scaler.transform(x_test)
 
 #2. 모델
-# model = Sequential([keras.Input(shape=(54,))])
+model = Sequential([keras.Input(shape=(54,))])
+model.add(Dense(128, activation="swish"))
+model.add(Dropout(0.3))
+model.add(Dense(64, activation="relu"))
+model.add(Dropout(0.3))
+model.add(Dense(128))
+model.add(Dropout(0.3))
+model.add(Dense(128, activation="relu"))
+model.add(Dropout(0.3))
+model.add(Dense(32))
+model.add(Dropout(0.3))
+model.add(Dense(64, activation="relu"))
+model.add(Dense(7, activation="softmax"))
 
-# model.add(Dense(128, activation="swish"))
-# model.add(Dropout(0.3))
-# model.add(Dense(64, activation="relu"))
-# model.add(Dropout(0.3))
-# model.add(Dense(128))
-
-# model.add(Dropout(0.3))
-# model.add(Dense(128, activation="relu"))
-# model.add(Dropout(0.3))
-# model.add(Dense(32))
-# model.add(Dropout(0.3))
-
-# model.add(Dense(64, activation="relu"))
-# model.add(Dense(7, activation="softmax"))
-
-input1 = Input(shape = (54,))
-
-dense1 = Dense(128, activation="swish")(input1)
-drop1= Dropout(0.3)(dense1)
-dense2 = Dense(64, activation="relu")(drop1)
-drop2= Dropout(0.3)(dense2)
-dense3 = Dense(128)(drop2)
-
-drop3= Dropout(0.3)(dense3)
-dense4 = Dense(128, activation="relu")(drop3)
-drop4= Dropout(0.3)(dense4)
-dense5 = Dense(32)(drop4)
-drop5= Dropout(0.3)(dense5)
-
-dense6 = Dense(64, activation="relu")(drop5)
-output1 = Dense(3, activation="softmax")(dense6)
-
-model = Model(input1,output1)
 
 #3. 컴파일 훈련
 model.compile(loss = "categorical_crossentropy", optimizer = "adam", metrics=["acc"])
@@ -120,5 +99,7 @@ my_util.record_model_csv(
     csv_file_path= "covtype.csv"
 )
 
+# CPU 793.0594 epoch 913
+# GPU 190.191  epoch 664
 
 #######acc 93   0.9358880579675224

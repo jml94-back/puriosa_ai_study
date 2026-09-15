@@ -1,5 +1,6 @@
 from functools import lru_cache
 import time
+import sys
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -9,13 +10,11 @@ import optuna
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, models, optimizers
-from tensorflow.keras.callbacks import EarlyStopping
-
 import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score
 
-# 0. 데이터 로딩 및 전처리 전용 함수 (1회만 실행됨)
+# 0. 데이터 로딩 및 전처리 전용 함수 (1회만 실행됨)[cite: 1]
 @lru_cache(maxsize=1)
 def load_data():
     random_num = 90
@@ -23,16 +22,16 @@ def load_data():
     path = "./_data/bike-sharing-demand"
     train_csv = pd.read_csv(path + "/train.csv")
 
-    # One-hot encoding for 'season'
+    # One-hot encoding for 'season'[cite: 1]
     train_seasons = pd.get_dummies(train_csv["season"], dtype=int)
     train_csv = pd.concat([train_csv, train_seasons], axis=1).rename(str, axis="columns") 
 
-    # [주의/수정] index가 아닌 'datetime' 컬럼에서 시간 정보 추출
+    # 'datetime' 컬럼에서 시간 정보 추출[cite: 1]
     dt_series = pd.to_datetime(train_csv["datetime"])
     train_csv["year"] = dt_series.dt.year
     train_csv["hour"] = dt_series.dt.hour
 
-    # 독립변수(X)와 종속변수(y) 분리
+    # 독립변수(X)와 종속변수(y) 분리[cite: 1]
     x = train_csv.drop(["datetime", "casual", "registered", "count", "season"], axis=1)
     y = train_csv["count"]
 
@@ -49,11 +48,30 @@ def load_data():
     print("✓ 데이터 로딩 및 전처리 완료 (1회 실행)")
     return x_train, x_test, y_train, y_test
 
-# 1. 후보군 정의
+# 1. 후보군 정의[cite: 1]
 NODE_CANDIDATES = [32, 64, 128, 256]
-ACTIVATION_CANDIDATES = ['gelu', 'relu', 'linear', 'swish']
+ACTIVATION_CANDIDATES = [
+    'relu', 
+    'gelu', 
+    'swish', 
+    'mish', 
+    'elu', 
+    'selu', 
+    'leaky_relu', 
+    'prelu', 
+    'linear'
+]
 
-# 2. Optuna 전용 Keras Pruning Callback 클래스 정의
+# 활성화 함수 문자열을 Keras 레이어 객체로 안전하게 반환하는 함수
+def get_activation_layer(act_name):
+    if act_name == 'prelu':
+        return layers.PReLU()
+    elif act_name == 'leaky_relu':
+        return layers.LeakyReLU(alpha=0.2)
+    else:
+        return layers.Activation(act_name)
+
+# 2. Optuna 전용 Keras Pruning Callback 클래스 정의[cite: 1]
 class KerasPruningCallback(tf.keras.callbacks.Callback):
     def __init__(self, trial, monitor='val_loss'):
         super().__init__()
@@ -67,72 +85,75 @@ class KerasPruningCallback(tf.keras.callbacks.Callback):
         if current_val is None:
             return
 
-        # 1) 현재 Epoch의 검증 손실을 Optuna에 보고
+        # 1) float 변환 및 NaN/Inf 예외 처리 (SQLite DB Commit 에러 방지)
+        current_val = float(current_val)
+        if np.isnan(current_val) or np.isinf(current_val):
+            self.model.stop_training = True
+            raise optuna.exceptions.TrialPruned()
+
+        # 2) 현재 Epoch의 검증 손실을 Optuna에 보고[cite: 1]
         self.trial.report(current_val, step=epoch)
 
-        # 2) 성능이 부진하여 Pruning 조건에 걸리면 학습 중단 및 Exception 발생
+        # 3) 성능 부진 시 조기 종료 및 Pruning Exception 발생[cite: 1]
         if self.trial.should_prune():
             self.model.stop_training = True
             raise optuna.exceptions.TrialPruned()
 
-# 3. Objective 함수 정의
+# 3. Objective 함수 정의[cite: 1]
 def objective(trial):
-    # 1. 하이퍼파라미터 제안
+    # 1) 하이퍼파라미터 제안[cite: 1]
     nodes = [
         trial.suggest_categorical(f'n_units_l{i}', NODE_CANDIDATES) 
-        for i in range(13)
+        for i in range(8)
     ]
     activations = [
         trial.suggest_categorical(f'act_l{i}', ACTIVATION_CANDIDATES) 
-        for i in range(13)
+        for i in range(8)
     ]
     dropouts = [
-        trial.suggest_categorical(f'dropout_l{i}', [0.0, 0.1, 0.2, 0.3, 0.5])
-        for i in range(13)
+        trial.suggest_float(f'dropout_l{i}', 0.0, 0.5, step=0.1)
+        for i in range(8)
     ]
 
-
-    # 1. 데이터 준비
+    # 2) 데이터 준비[cite: 1]
     x_train, x_test, y_train, y_test = load_data()
 
-    # 2. 모델 생성
-    model = models.Sequential([keras.Input(shape=x_train[0].shape)],name=f"Optuna_Trial_{trial.number}")
-    for i in range(13):
-        model.add(layers.Dense(nodes[i], activation=activations[i]))
+    # 3) 모델 생성[cite: 1]
+    model = models.Sequential([keras.Input(shape=x_train[0].shape)], name=f"Optuna_Trial_{trial.number}")
+    
+    for i in range(8):
+        model.add(layers.Dense(nodes[i]))
+        model.add(get_activation_layer(activations[i]))
         if dropouts[i] > 0.0:
             model.add(layers.Dropout(rate=dropouts[i]))
+
     model.add(layers.Dense(1))
 
-    #3. 컴파일 훈련
+    # 4) 컴파일 및 훈련[cite: 1]
     batch_size = 1024
-    epochs = 200
+    epochs = 20
     model.compile(optimizer='adam', loss='mse', metrics=['mse'])
-
-    es = EarlyStopping(
-    monitor = 'val_loss', mode = "min", 
-    patience = 20, restore_best_weights= True, 
-    )
 
     start_time = time.time()
     
-    # Optuna Pruning Callback과 연동 (필요 시 적용)
+    # Optuna Pruning Callback 적용[cite: 1]
     history = model.fit(
         x_train, y_train,
         validation_data=(x_test, y_test),
         epochs=epochs,
-        callbacks=[KerasPruningCallback(trial, monitor='val_loss'),es],
         batch_size=batch_size,
+        callbacks=[KerasPruningCallback(trial, monitor='val_loss')],
         verbose=0
     )
     
     training_time = time.time() - start_time
 
-    # 4. 테스트/검증 평가
-    test_loss = model.evaluate(x_test, y_test, verbose=0)[0]
+    # 5) 테스트/검증 평가[cite: 1]
+    test_loss = float(model.evaluate(x_test, y_test, verbose=0)[0])
     y_pred = model.predict(x_test, verbose=0)
-    r2 = r2_score(y_test, y_pred)
+    r2 = float(r2_score(y_test, y_pred))
 
-    # 6. 작성하신 record_model_csv 함수로 CSV에 기록
+    # 6) CSV 결과 기록[cite: 1]
     try:
         my_util.record_model_csv(
             model=model,
@@ -142,7 +163,7 @@ def objective(trial):
             training_time=training_time,
             test_loss=test_loss,
             random_num=90,
-            r2_score=r2,                   # 필요시 R2 score 계산 후 전달
+            r2_score=r2,
             csv_file_path="optuna_search_log.csv"
         )
     except Exception as e:
@@ -150,11 +171,9 @@ def objective(trial):
 
     return test_loss
 
-# 4. Study 생성 및 실행
+# 4. Study 생성 및 멀티 프로세싱 실행[cite: 1]
 if __name__ == "__main__":
     pruner = optuna.pruners.MedianPruner(n_warmup_steps=5)
-    
-    # 1. 멀티 프로세싱 간 Trial 상태 공유를 위한 SQLite DB 스토리지 생성
     storage_name = "sqlite:///optuna_study.db"
     
     study = optuna.create_study(
@@ -162,14 +181,13 @@ if __name__ == "__main__":
         storage=storage_name,
         direction="minimize",
         pruner=pruner,
-        load_if_exists=True  # 이미 존재할 경우 이어받기
+        load_if_exists=True
     )
 
-    # 2. n_jobs 옵션으로 병렬 실행할 프로세스 수 지정 (-1은 사용 가능한 모든 CPU 코어 사용)
-    # CPU 코어 수에 맞게 n_jobs를 조정하세요 (예: n_jobs=4)
-    study.optimize(objective, n_trials=1000, n_jobs=4)
+    # 병렬 멀티프로세싱 실행 (n_jobs=-1 은 사용 가능한 전체 CPU 코어 활용)
+    study.optimize(objective, n_trials=3000, n_jobs=-1)
 
-    # 3. 결과 확인
+    # 5. 결과 확인[cite: 1]
     pruned_trials = study.get_trials(deepcopy=False, states=[optuna.trial.TrialState.PRUNED])
     complete_trials = study.get_trials(deepcopy=False, states=[optuna.trial.TrialState.COMPLETE])
 
@@ -182,3 +200,7 @@ if __name__ == "__main__":
     print("최적의 하이퍼파라미터 조합:")
     for key, value in study.best_params.items():
         print(f"  {key}: {value}")
+
+    # 백그라운드 Keras 세션 종료 및 가비지 컬렉션 처리
+    tf.keras.backend.clear_session()
+    sys.exit(0)

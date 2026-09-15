@@ -1,31 +1,34 @@
 import numpy as np
 import pandas as pd
 
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Dense,Dropout, Input
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow import keras
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 
-from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler,MaxAbsScaler
-from sklearn.datasets import fetch_covtype
+from sklearn.datasets import load_wine
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-
+from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler, MaxAbsScaler
 
 import time
 import datetime
 import my_util
 
-path = "./_save/fetch_covtype/"
+path = "./_save/wine/"
 date = datetime.datetime.now().strftime("%m%d_%H%M")
 filename = "_{epoch:04d}-{val_loss:.4f}.keras"
 filepath = "".join([path,"k31_",date, filename])
 
 #1. 데이터
-datasets = fetch_covtype()
+datasets = load_wine()
+# print(datasets.DESCR)
 
 x=datasets.data
 y=datasets.target
+
+# print(x.shape, y.shape) #(178, 13) (178,)
+# print(np.unique(y, return_counts=True))
 
 y = pd.get_dummies(y)
 
@@ -43,41 +46,19 @@ x_train = scaler.transform(x_train)
 x_test = scaler.transform(x_test)
 
 #2. 모델
-# model = Sequential([keras.Input(shape=(54,))])
+model = Sequential([keras.Input(shape=(13,))])
+model.add(Dense(32, activation="relu"))
+model.add(Dropout(0.1))
+model.add(Dense(128, activation="relu"))
+model.add(Dropout(0.3))
+model.add(Dense(128, activation="relu"))
+model.add(Dropout(0.2))
+model.add(Dense(128))
+model.add(Dropout(0.3))
+model.add(Dense(32, activation="relu"))
+model.add(Dense(64, activation="relu"))
+model.add(Dense(3, activation="softmax"))
 
-# model.add(Dense(128, activation="swish"))
-# model.add(Dropout(0.3))
-# model.add(Dense(64, activation="relu"))
-# model.add(Dropout(0.3))
-# model.add(Dense(128))
-
-# model.add(Dropout(0.3))
-# model.add(Dense(128, activation="relu"))
-# model.add(Dropout(0.3))
-# model.add(Dense(32))
-# model.add(Dropout(0.3))
-
-# model.add(Dense(64, activation="relu"))
-# model.add(Dense(7, activation="softmax"))
-
-input1 = Input(shape = (54,))
-
-dense1 = Dense(128, activation="swish")(input1)
-drop1= Dropout(0.3)(dense1)
-dense2 = Dense(64, activation="relu")(drop1)
-drop2= Dropout(0.3)(dense2)
-dense3 = Dense(128)(drop2)
-
-drop3= Dropout(0.3)(dense3)
-dense4 = Dense(128, activation="relu")(drop3)
-drop4= Dropout(0.3)(dense4)
-dense5 = Dense(32)(drop4)
-drop5= Dropout(0.3)(dense5)
-
-dense6 = Dense(64, activation="relu")(drop5)
-output1 = Dense(3, activation="softmax")(dense6)
-
-model = Model(input1,output1)
 
 #3. 컴파일 훈련
 model.compile(loss = "categorical_crossentropy", optimizer = "adam", metrics=["acc"])
@@ -92,10 +73,10 @@ mcp = ModelCheckpoint(
     save_best_only=True, filepath=filepath,
 )
 
-batch_size = 4096
+batch_size = 16
 start_time = time.time()
 
-history = model.fit(x_train,y_train, epochs=30000, batch_size=batch_size, validation_split=0.2, callbacks = [es,mcp])
+history = model.fit(x_train,y_train, epochs=1000, batch_size=batch_size, validation_split=0.2, callbacks = [es,mcp])
 
 train_time = time.time() - start_time
 
@@ -106,6 +87,8 @@ y_pred = model.predict(x_test)
 y_pred = np.argmax(y_pred,axis=1)
 y_test = np.argmax(y_test,axis=1)
 acc = accuracy_score(y_test,y_pred)
+print(y_pred)
+print(acc)
 
 my_util.record_model_csv(
     model = model,
@@ -117,8 +100,13 @@ my_util.record_model_csv(
     test_loss = loss,
     r2_score = acc,
     train_ration = train_ration,
-    csv_file_path= "covtype.csv"
+    csv_file_path="wine.csv"
 )
 
+# CPU 7.4161    epoch 90
+# GPU 5.7194    epoch 164
 
-#######acc 93   0.9358880579675224
+
+
+
+###acc 0.95 0.9722222089767456

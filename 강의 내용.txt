@@ -57,3 +57,24 @@ Day 8
 OneHot Encoding to_categorical(keras)
 
 relu - 배치 노말라이제이션
+
+Day 12
+
+gpu 사용 설정
+1. nvidia driver 설치
+2. cuda 11.2.2
+3. cudnn 8.1 - 고급 - visual stuidio Intigration 에러 발생
+4. 가상환경 추가 ( conda create -n tf29x-gpu python=3.10 )
+5. python 3.10.x
+6. tensorflow 2.9.x ( pip install tensorflow-gpu==2.9.3 )
+numpy 1.26.4으로 버전 다운
+pip install tensorflow-gpu==1.26.4
+pip install scikit-learn==1.7.2
+
+버전 확인
+nvidia-smi
+nvcc -V
+
+DNN csv 2차원
+RNN     3차원
+CNN 

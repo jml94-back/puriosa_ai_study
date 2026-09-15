@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Dense,Dropout, Input
-from tensorflow import keras
-from tensorflow.keras.callbacks import EarlyStopping,ModelCheckpoint
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+import keras
+from keras.callbacks import EarlyStopping,ModelCheckpoint
 
 from sklearn.preprocessing import MinMaxScaler,StandardScaler,MaxAbsScaler,RobustScaler
 from sklearn.datasets import load_digits
@@ -52,50 +52,22 @@ x_test = scaler.transform(x_test)
 
 #2. 모델
 model = Sequential([keras.Input(shape=(64,))])
-
 model.add(Dense(256))
 model.add(Dropout(0.3))
 model.add(Dense(128, activation="relu"))
 model.add(Dropout(0.3))
 model.add(Dense(256, activation="relu"))
-
 model.add(Dropout(0.3))
 model.add(Dense(128))
 model.add(Dropout(0.2))
 model.add(Dense(256, activation="relu"))
 model.add(Dropout(0.3))
-
 model.add(Dense(128, activation="relu"))
 model.add(Dropout(0.2))
 model.add(Dense(256, activation="relu"))
 model.add(Dropout(0.3))
 model.add(Dense(64))
-
 model.add(Dense(10, activation="softmax"))
-
-input1 = Input(shape = (64,))
-
-dense1 = Dense(256)(input1)
-drop1= Dropout(0.3)(dense1)
-dense2 = Dense(128, activation="relu")(drop1)
-drop2= Dropout(0.3)(dense2)
-dense3 = Dense(256, activation="relu")(drop2)
-
-drop3= Dropout(0.3)(dense3)
-dense4 = Dense(128)(drop3)
-drop4= Dropout(0.2)(dense4)
-dense5 = Dense(256, activation="relu")(drop4)
-drop5= Dropout(0.3)(dense5)
-
-dense6 = Dense(128, activation="relu")(drop5)
-drop6= Dropout(0.2)(dense6)
-dense7 = Dense(256, activation="relu")(drop6)
-drop7= Dropout(0.3)(dense7)
-dense8 = Dense(64)(drop7)
-
-output1 = Dense(10, activation="softmax")(dense8)
-
-model = Model(input1,output1)
 
 #3. 컴파일 훈련
 model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["acc"])
@@ -138,3 +110,6 @@ my_util.record_model_csv(
     train_ration = train_ratio,
     csv_file_path="digit.csv"
 )
+
+# CPU 20.5853
+# GPU 25.4121
