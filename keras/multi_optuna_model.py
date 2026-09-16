@@ -8,8 +8,8 @@ import my_util
 
 import optuna
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers, models, optimizers
+import keras
+from keras import layers, models, optimizers
 import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score
@@ -68,6 +68,13 @@ def get_activation_layer(act_name):
         return layers.PReLU()
     elif act_name == 'leaky_relu':
         return layers.LeakyReLU(alpha=0.2)
+    elif act_name == 'mish':
+        # TF 구버전 호환용 mish 함수 처리
+        if hasattr(tf.keras.activations, 'mish'):
+            return layers.Activation(tf.keras.activations.mish)
+        else:
+            # mish 구현체가 전혀 없는 구버전일 경우 직접 공식 수식 정의
+            return layers.Activation(lambda x: x * tf.math.tanh(tf.math.softplus(x)))
     else:
         return layers.Activation(act_name)
 
@@ -148,9 +155,11 @@ def objective(trial):
     
     training_time = time.time() - start_time
 
-    # 5) 테스트/검증 평가[cite: 1]
-    test_loss = float(model.evaluate(x_test, y_test, verbose=0)[0])
-    y_pred = model.predict(x_test, verbose=0)
+    # 5) 테스트/검증 평가[cite: 2]
+    test_loss = float(model.evaluate(x_test, y_test, batch_size=batch_size, verbose=0)[0])
+    
+    # Predict 호출 시 batch_size 명시 및 numpy 수치형 변환[cite: 2]
+    y_pred = model.predict(x_test, batch_size=batch_size, verbose=0)
     r2 = float(r2_score(y_test, y_pred))
 
     # 6) CSV 결과 기록[cite: 1]
@@ -169,6 +178,10 @@ def objective(trial):
     except Exception as e:
         print(f"CSV 기록 중 오류 발생: {e}")
 
+    tf.keras.backend.clear_session()
+    import gc
+    gc.collect()
+
     return test_loss
 
 # 4. Study 생성 및 멀티 프로세싱 실행[cite: 1]
@@ -177,7 +190,7 @@ if __name__ == "__main__":
     storage_name = "sqlite:///optuna_study.db"
     
     study = optuna.create_study(
-        study_name="keras_multi_process",
+        study_name="bike_model",
         storage=storage_name,
         direction="minimize",
         pruner=pruner,
@@ -185,7 +198,7 @@ if __name__ == "__main__":
     )
 
     # 병렬 멀티프로세싱 실행 (n_jobs=-1 은 사용 가능한 전체 CPU 코어 활용)
-    study.optimize(objective, n_trials=3000, n_jobs=-1)
+    study.optimize(objective, n_trials=3000, n_jobs=4)
 
     # 5. 결과 확인[cite: 1]
     pruned_trials = study.get_trials(deepcopy=False, states=[optuna.trial.TrialState.PRUNED])

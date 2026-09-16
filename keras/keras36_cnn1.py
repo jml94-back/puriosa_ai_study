@@ -2,7 +2,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv2D
 
 model = Sequential()
-model.add(Conv2D(1, (2,2), input_shape=(10,10,4)))
+model.add(Conv2D(3, (2,2), input_shape=(10,10,4)))
 model.add(Conv2D(5,(2,2)))
 
 model.summary()

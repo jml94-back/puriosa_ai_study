@@ -113,7 +113,7 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
     ]
     
     # 파일이 존재하지 않으면 헤더(Header)를 먼저 작성
-    csv_file_path="./_data/record/"+csv_file_path
+    csv_file_path="C:/study/_data/record/"+csv_file_path
     file_exists = os.path.isfile(csv_file_path)
     
     with open(csv_file_path, mode='a', newline='', encoding='utf-8-sig') as f:
