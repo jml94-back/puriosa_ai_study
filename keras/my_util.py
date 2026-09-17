@@ -1,12 +1,13 @@
 import csv
 import datetime
 import os
+import re
 import sys
 
 import numpy as np
 from sklearn.metrics import mean_squared_error
 
-def record_model_csv(model, data_shape, batch_size, history, training_time, test_loss, random_num="-1", r2_score="", csv_file_path="model_history_log.csv", train_ration = 0.7):
+def record_model_csv(model, data_shape, batch_size, history, training_time, test_loss, random_num="-1", sub_score="", csv_file_path="model_history_log.csv", train_ration = 0.7):
     # 1. 현재날짜시간
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -109,7 +110,7 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
     log_data = [
         current_time, file_name, data_shape, random_num, model_name, model_structure, 
         loss_func, optimizer_name, epochs, batch_size, round(training_time, 4), 
-        first_loss, last_loss, test_loss, r2_score, train_ration, total_params
+        first_loss, last_loss, test_loss, sub_score, train_ration, total_params
     ]
     
     # 파일이 존재하지 않으면 헤더(Header)를 먼저 작성
@@ -122,7 +123,7 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
             writer.writerow([
                 "time", "pyfile", "data_shape", "random_num", "model", "model_structure", 
                 "loss", "optimizer", "epochs", "batch_size", "train_second", 
-                "first_loss", "last_loss","test_loss", "r2_score", "train_ration","total_params"
+                "first_loss", "last_loss","test_loss", "sub_score", "train_ration","total_params"
             ])
         writer.writerow(log_data)
     
@@ -130,3 +131,29 @@ def record_model_csv(model, data_shape, batch_size, history, training_time, test
 
 def RMSE(y_test, y_predict): #rmse 함수 정의
     return np.sqrt(mean_squared_error(y_test,y_predict))
+
+def leaveTop(path, prefix, subfix, count, mode = "min"):
+    if count < 0:
+        raise ValueError("count must be greater than or equal to 0")
+    if mode not in ("min", "max"):
+        raise ValueError("mode must be either 'min' or 'max'")
+
+    score_pattern = re.compile(
+        rf"^{re.escape(prefix)}.*-(?P<score>-?\d+(?:\.\d+)?){re.escape(subfix)}$"
+    )
+    candidates = []
+
+    for filename in os.listdir(path):
+        match = score_pattern.match(filename)
+        if match:
+            candidates.append((float(match.group("score")), filename))
+
+    candidates.sort(key=lambda item: (item[0], item[1]), reverse=mode == "max")
+    deleted_files = []
+
+    for _, filename in candidates[count:]:
+        filepath = os.path.join(path, filename)
+        os.remove(filepath)
+        deleted_files.append(filepath)
+    
+    return deleted_files
