@@ -1,40 +1,30 @@
-import datetime
 import time
+import datetime
 
 import numpy as np
 import pandas as pd
 
-from keras.datasets import fashion_mnist
+from keras.datasets import mnist
 from keras.models import Sequential
-from keras.layers import Conv2D, Dense, Dropout, Flatten, GlobalAveragePooling2D, MaxPool2D, MaxPooling2D
+from keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPooling2D, GlobalAveragePooling2D
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import OneHotEncoder
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 import my_util
 
-path = "./_save/fashion/"
+path = "./_save/mnist/"
 date = datetime.datetime.now().strftime("%m%d_%H%M")
 prefix = "k40_"+date
 filename = "_{epoch:04d}-{val_loss:.4f}.keras"
 filepath = "".join([path, prefix, filename])
 
 #1. 데이터
-(x_train,y_train),(x_test,y_test) = fashion_mnist.load_data()
+(x_train,y_train),(x_test,y_test) = mnist.load_data()
 
-# print(x_train.shape, y_train.shape) # (60000, 28, 28) (60000,)
-# print(x_test.shape, y_test.shape)  #(10000, 28, 28) (10000,)
-
-# print(np.unique(y_train, return_counts=True)) #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-# import matplotlib.pyplot as plt
-
-# plt.imshow(x_train[4342],"gray")
-# plt.show()
-
-# 스케일링 2(MaxAbs)
-x_train = (x_train-127.5)/127.5
-x_test = (x_test-127.5)/127.5
+# 스케일링 1(Minmax)
+x_train = x_train/255.
+x_test = x_test/255.
 
 x_train = x_train.reshape(-1,28,28,1)
 x_test = x_test.reshape(-1,28,28,1)
@@ -43,28 +33,23 @@ ohe = OneHotEncoder(sparse_output=False)
 y_train = ohe.fit_transform(y_train.reshape(-1,1))
 y_test = ohe.transform(y_test.reshape(-1,1))
 
-#2. 모델구성
+#2. 모델 구성
 model = Sequential()
-model.add(Conv2D(32, (3,3), input_shape=x_test[0].shape))
+model.add(Conv2D(64, (3,3),input_shape=x_test[0].shape)) # (26,26,64)
+model.add(Conv2D(filters=32, kernel_size=(3,3), activation="relu")) #(24, 24, 32)
 model.add(Dropout(0.2))
-model.add(Conv2D(64, (3,3), activation="relu"))
-model.add(Dropout(0.3))
-model.add(Conv2D(128, (2,2), activation="relu"))
-model.add(Dropout(0.2))
-model.add(MaxPooling2D())
 model.add(Conv2D(32, (2,2), activation="relu"))
 model.add(MaxPooling2D())
-model.add(Conv2D(16, (2,2), activation="relu"))
+model.add(Conv2D(16, (4,4), activation="relu"))
 model.add(Dropout(0.2))
 model.add(Conv2D(16, (2,2), activation="relu"))
 model.add(Dropout(0.2))
+model.add(Conv2D(16, (2,2), activation="relu")) #(20,20,16)
 
-model.add(GlobalAveragePooling2D())
+model.add(GlobalAveragePooling2D()) #(None, 6400)
 model.add(Dense(units=128, activation="relu"))
 model.add(Dropout(0.3))
-model.add(Dense(units=64, activation="relu"))
-model.add(Dropout(0.2))
-model.add(Dense(units=16, activation="relu"))
+model.add(Dense(units=32, activation="relu"))
 model.add(Dense(10, activation="softmax"))
 
 #3. 컴파일 훈련
@@ -72,7 +57,7 @@ model.compile(loss = "categorical_crossentropy", optimizer = "adam", metrics=["a
 
 es = EarlyStopping(
     monitor = 'val_loss', mode = "min", 
-    patience = 50, restore_best_weights= True, 
+    patience = 30, restore_best_weights= True, 
 )
 
 mcp = ModelCheckpoint(
@@ -80,13 +65,12 @@ mcp = ModelCheckpoint(
     save_best_only=True, filepath=filepath,
 )
 
-batch_size = 256
+batch_size = 64
 start_time = time.time()
 
-history = model.fit(x_train,y_train, verbose=2, epochs=2000, batch_size=batch_size, validation_split=0.3, callbacks = [es,mcp])
+history = model.fit(x_train,y_train, verbose=2, epochs=500, batch_size=batch_size, validation_split=0.3, callbacks = [es,mcp])
 
 train_time = time.time() - start_time
-
 
 #4. 평가 예측
 loss = model.evaluate(x_test,y_test)
@@ -108,12 +92,12 @@ my_util.record_model_csv(
     test_loss = loss[0],
     sub_score = acc,
     train_ration = 0,
-    csv_file_path="fasion.csv"
+    csv_file_path="mnist.csv"
 )
+#model, history 등등을 넘기면 csv에 학습한 모델과 loss 등등을 기록해줌
+#모델 구성을 기록해줘서 좋습니다.
 
 
 my_util.leaveTop(path=path, prefix=prefix, subfix=".keras", count=5, mode="min")
-
-
-
-#acc 0.92
+#path 폴더에 있는 prefix로 시작하고, subfix로 끝나는 파일 중에
+#mode(min,max)에 따라 count개 만큼만 남김 

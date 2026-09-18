@@ -5,19 +5,19 @@ import numpy as np
 import pandas as pd
 
 from keras.datasets import cifar100
-from keras.models import Sequential
-from keras.layers import Conv2D, Dense, Dropout, Flatten, GlobalAveragePooling2D, MaxPooling2D
+from keras.models import Model, Sequential
+from keras.layers import Conv2D, Dense, Dropout, Flatten, GlobalAveragePooling2D, Input, MaxPooling2D
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import OneHotEncoder
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 import my_util
 
-path = "./_save/cifa100/"
-date = datetime.datetime.now().strftime("%m%d_%H%M")
-prefix = "k40_"+date
-filename = "_{epoch:04d}-{val_loss:.4f}.keras"
-filepath = "".join([path, prefix, filename])
+# path = "./_save/cifa100/"
+# date = datetime.datetime.now().strftime("%m%d_%H%M")
+# prefix = "k40_"+date
+# filename = "_{epoch:04d}-{val_loss:.4f}.keras"
+# filepath = "".join([path, prefix, filename])
 
 #1. 데이터
 (x_train,y_train),(x_test,y_test) = cifar100.load_data()
@@ -48,26 +48,48 @@ y_train = ohe.fit_transform(y_train.reshape(-1,1))
 y_test = ohe.transform(y_test.reshape(-1,1))
 
 #2. 모델구성
-model = Sequential()
-model.add(Conv2D(64, (3,3), input_shape=x_test[0].shape))
-model.add(Conv2D(128, (2,2)))
-model.add(MaxPooling2D())
-model.add(Conv2D(64, (2,2), activation="relu"))
-model.add(Dropout(0.3))
-model.add(Conv2D(128, (2,2), activation="relu"))
-model.add(Dropout(0.2))
-model.add(MaxPooling2D())
-model.add(Conv2D(256, (2,2), activation="relu"))
-model.add(Dropout(0.3))
+# model = Sequential()
+# model.add(Conv2D(64, (3,3), input_shape=x_test[0].shape))
+# model.add(Conv2D(128, (2,2)))
+# model.add(MaxPooling2D())
+input1 = Input(shape = x_train[0].shape)
+l1 = Conv2D(64, (3,3), input_shape=x_test[0].shape)(input1)
+l2 = Conv2D(128, (2,2))(l1)
+l3 = MaxPooling2D()(l2)
 
-model.add(GlobalAveragePooling2D())
-model.add(Dense(units=256, activation="relu"))
-model.add(Dropout(0.3))
-model.add(Dense(units=256, activation="relu"))
-model.add(Dropout(0.2))
-model.add(Dense(units=128, activation="relu"))
-model.add(Dense(100, activation="softmax"))
+# model.add(Conv2D(64, (2,2), activation="relu"))
+# model.add(Dropout(0.3))
+# model.add(Conv2D(128, (2,2), activation="relu"))
+l4 = Conv2D(64, (2,2), activation="relu")(l3)
+l5 = Dropout(0.3)(l4)
+l6 = Conv2D(128, (2,2), activation="relu")(l5)
+# model.add(Dropout(0.2))
+# model.add(MaxPooling2D())
+# model.add(Conv2D(256, (2,2), activation="relu"))
+l7 = Dropout(0.2)(l6)
+l8 = MaxPooling2D()(l7)
+l9 = Conv2D(256, (2,2), activation="relu")(l8)
+# model.add(Dropout(0.3))
+# model.add(GlobalAveragePooling2D())
+# model.add(Dense(units=256, activation="relu"))
+l10 = Dropout(0.3)(l9)
+l11 = GlobalAveragePooling2D()(l10)
+l12 = Dense(units=256, activation="relu")(l11)
+# model.add(Dropout(0.3))
+# model.add(Dense(units=256, activation="relu"))
+# model.add(Dropout(0.2))
+l13 = Dropout(0.3)(l12)
+l14 = Dense(units=256, activation="relu")(l13)
+l15 = Dropout(0.2)(l14)
+# model.add(Dense(units=128, activation="relu"))
+# model.add(Dense(100, activation="softmax"))
+l16 = Dense(units=128, activation="relu")(l15)
+output1 = Dense(100, activation="softmax")(l16)
 
+model = Model(inputs=input1, outputs=output1)
+
+model.summary()
+exit()
 #3. 컴파일 훈련
 model.compile(loss = "categorical_crossentropy", optimizer = "adam", metrics=["acc"])
 
@@ -76,10 +98,10 @@ es = EarlyStopping(
     patience = 50, restore_best_weights= True, 
 )
 
-mcp = ModelCheckpoint(
-    monitor='val_loss', mode='auto', verbose=1,
-    save_best_only=True, filepath=filepath,
-)
+# mcp = ModelCheckpoint(
+#     monitor='val_loss', mode='auto', verbose=1,
+#     save_best_only=True, filepath=filepath,
+# )
 
 batch_size = 256
 start_time = time.time()

@@ -3,3 +3,5 @@
 **/.vscode/
 .vscode/
 _save/
+_data/image/
+_data/npy/

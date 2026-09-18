@@ -70,7 +70,7 @@ model.add(Conv2D(32, (4,4),input_shape=x_test[0].shape)) # (26,26,64)
 model.add(Dropout(0.3))
 model.add(Conv2D(filters=32, kernel_size=(3,3), activation="relu")) #(24, 24, 32)
 model.add(Dropout(0.3))
-model.add(Conv2D(filters=32, kernel_size=(2,2), activation="relu")) #(24, 24, 32)
+model.add(Conv2D(filters=32, kernel_size=(3,3), activation="relu")) #(24, 24, 32)
 model.add(Dropout(0.3))
 
 model.add(Flatten()) #(None, 6400)
