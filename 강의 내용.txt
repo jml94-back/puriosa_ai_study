@@ -93,3 +93,7 @@ Tree - 랜덤포레스트 - 부스팅 계열
 RNN 순환 신경망
 TimeSeries 시계열 데이터
 TimeSteps 
+
+RNN  - 첫 값을 까먹음
+LSTM - 장기 기억 서킷 추가
+GRU  - 구조 단순화

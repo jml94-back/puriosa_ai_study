@@ -1,6 +1,6 @@
 import numpy as np
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Dropout, SimpleRNN
+from keras.layers import LSTM, Dense, Dropout, SimpleRNN, GRU
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
 
@@ -23,7 +23,8 @@ x = x.reshape(x.shape[0],x.shape[1],1) #(7,3,1)
 
 #2. 모델
 model = Sequential()
-model.add(LSTM(units=16, input_shape = (3,1), )) #3차원 -> 2차원 Dense 연결
+# model.add(LSTM(units=16, input_shape = (3,1), )) #3차원 -> 2차원 Dense 연결
+model.add(GRU(units=16, input_shape = (3,1), )) #3차원 -> 2차원 Dense 연결
 # model.add(Dense(32,"relu",))
 model.add(Dropout(0.1))
 # model.add(Dense(64, activation="relu"))
@@ -40,7 +41,7 @@ model.summary()
 _________________________________________________________________
  Layer (type)                Output Shape              Param #   
 =================================================================
- lstm (LSTM)                 (None, 16)                1152      
+ lstm (LSTM)                 (None, 16)                1152     |   gru (GRU)                   (None, 16)                912       
  dropout (Dropout)           (None, 16)                0                                                                          
  dense (Dense)               (None, 64)                1088      
  dropout_1 (Dropout)         (None, 64)                0         
@@ -49,7 +50,7 @@ _________________________________________________________________
 =================================================================
 """
 
-exit()
+# exit()
 #3. 컴파일 훈련
 learning_rate = 0.001
 

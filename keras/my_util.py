@@ -157,3 +157,11 @@ def leaveTop(path, prefix, subfix, count, mode = "min"):
         deleted_files.append(filepath)
     
     return deleted_files
+
+def split_x(dataset, timestep):
+    size = len(dataset)-timestep+1
+    x = []
+    for i in range(size):
+        subset = dataset[i:(i+timestep)]
+        x.append(subset)
+    return np.array(x)
