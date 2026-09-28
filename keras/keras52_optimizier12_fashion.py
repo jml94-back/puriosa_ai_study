@@ -1,0 +1,157 @@
+import numpy as np
+import time
+import datetime
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from keras.datasets import fashion_mnist
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.models import Sequential
+from keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPooling2D, GlobalAveragePooling2D
+from keras.optimizers import Adam
+
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import OneHotEncoder
+
+# import matplotlib.pyplot as plt
+
+import my_util
+from tqdm_callback import TQDMProgress
+
+path = "./_save/fashion/"
+date = datetime.datetime.now().strftime("%m%d_%H%M")
+prefix = "k52_"+date
+filename = "_{epoch:04d}-{val_loss:.4f}.keras"
+filepath = "".join([path, prefix, filename])
+
+#1. 데이터
+(x_train,y_train),(x_test,y_test) = fashion_mnist.load_data()
+
+x_train = x_train.reshape(-1,x_train.shape[1],x_train.shape[2],1)
+x_test = x_test.reshape(-1,x_train.shape[1],x_train.shape[2],1)
+
+x_train = x_train/255.
+x_test = x_test/255.
+
+# print(x_train.shape, y_train.shape) # (60000, 28, 28) (60000,)
+# print(np.unique(y_train, return_counts=True)) #[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+# exit()
+
+# 데이터 증폭
+datagen = ImageDataGenerator(
+    #증폭 변환하는 파라미터들
+    # rescale=1./255,
+    horizontal_flip=True,   # 좌우 반전
+    # vertical_flip=True,     # 상하 반전
+    width_shift_range= 0.1, # 평형 이동
+    height_shift_range=0.1, # 수직 이동
+    rotation_range= 20,      # 각도 조절
+    zoom_range=0.1,         #
+    # shear_range=0.7,        # 좌표 하나를 고정하고 다른 좌표들을 이동
+    fill_mode="nearest",
+)
+
+augment_size = 140000
+
+# xy_data = datagen.flow(
+#     np.tile(x_train[0].reshape(28*28),augment_size).reshape(-1,28,28,1),
+#     np.zeros(augment_size),
+#     batch_size=augment_size,
+#     shuffle=False,
+# ).next()
+
+randidx = np.random.choice(x_train.shape[0],size=augment_size)
+
+x_augmented = x_train[randidx].copy()
+y_augmented = y_train[randidx].copy()
+
+x_augmented = datagen.flow(
+    x_augmented,
+    y_augmented,
+    batch_size=augment_size,
+    shuffle=False,
+).next()[0]
+
+# 데이터 변환 완료. 데이터 합병
+x_train = np.concatenate((x_train,x_augmented))
+y_train = np.concatenate((y_train,y_augmented))
+
+ohe = OneHotEncoder(sparse_output=False)
+y_train = ohe.fit_transform(y_train.reshape(-1,1))
+y_test = ohe.transform(y_test.reshape(-1,1))
+
+#2. 모델 구성
+model = Sequential()
+model.add(Conv2D(32, (3,3),input_shape=x_test[0].shape)) # (26,26,64)
+model.add(Conv2D(filters=32, kernel_size=(3,3), activation="relu")) #(24, 24, 32)
+model.add(Dropout(0.3))
+model.add(Conv2D(64, (2,2), activation="relu"))
+model.add(MaxPooling2D())
+model.add(Conv2D(64, (3,3), activation="relu"))
+model.add(Dropout(0.2))
+model.add(Conv2D(32, (2,2), activation="relu"))
+model.add(MaxPooling2D())
+model.add(Dropout(0.1))
+model.add(Conv2D(64, (2,2), activation="relu")) #(20,20,16)
+
+model.add(GlobalAveragePooling2D()) #(None, 6400)
+model.add(Dense(units=128, activation="relu"))
+model.add(Dropout(0.3))
+model.add(Dense(units=32, activation="relu"))
+model.add(Dense(10, activation="softmax"))
+
+#3. 컴파일 훈련
+learning_rate5 = 0.0001
+
+model.compile(loss = "categorical_crossentropy", optimizer = Adam(learning_rate=learning_rate5), metrics=["acc"])
+
+es = EarlyStopping(
+    monitor = 'val_loss', mode = "min", 
+    patience = 30, restore_best_weights= True, 
+)
+
+mcp = ModelCheckpoint(
+    monitor='val_loss', mode='auto', verbose=0,
+    save_best_only=True, filepath=filepath,
+)
+
+tqdm_callback = TQDMProgress()
+
+import gc
+import tensorflow as tf
+
+# 에폭 종료 또는 학습 완료 후 실행
+tf.keras.backend.clear_session()
+gc.collect()
+
+
+batch_size = 3000
+start_time = time.time()
+
+history = model.fit(x_train,y_train, verbose=0, epochs=500, batch_size=batch_size, validation_split=0.3, callbacks = [es,mcp,tqdm_callback])
+
+train_time = time.time() - start_time
+
+#4. 평가 예측
+loss = model.evaluate(x_test,y_test)
+
+y_pred = model.predict(x_test)
+
+y_pred = np.argmax(y_pred,axis=1)
+y_test = np.argmax(y_test,axis=1)
+acc = accuracy_score(y_test,y_pred)
+print(acc)
+
+my_util.record_model_csv(
+    model = model,
+    data_shape = x_train.shape,
+    random_num = 0,
+    batch_size = batch_size,
+    history = history,
+    training_time = train_time,
+    test_loss = loss[0],
+    sub_score = acc,
+    train_ration = 0,
+    csv_file_path="fashion.csv"
+)
+
+my_util.leaveTop(path=path, prefix=prefix, subfix=".keras", count=5, mode="min")

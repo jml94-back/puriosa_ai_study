@@ -22,20 +22,31 @@ import my_util
 #1. 데이터
 (x_train,y_train),(x_test,y_test) = mnist.load_data()
 # print(x_train[3])
-# print(x_train.shape, y_train.shape) # (60000, 28, 28) (60000,)
-# print(x_test.shape, y_test.shape)   # (10000, 28, 28) (10000,)
+print(x_train.shape, y_train.shape) # (60000, 28, 28) (60000,)
+print(x_test.shape, y_test.shape)   # (10000, 28, 28) (10000,)
 
 # print(np.unique(y_train, return_counts=True)) #(array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=uint8), array([5923, 6742, 5958, 6131, 5842, 5421, 5918, 6265, 5851, 5949],dtype=int64))
 # print(pd.value_counts(y_test))
 # print(np.max(x_train),np.min(x_train)) #255 0
 # print(np.max(x_test),np.min(x_test)) #255 0
 
-x_train = 255-x_train
-x_test = 255-x_test
+rev_x_train = 255-x_train
+rev_x_test = 255-x_test
+rev_y_test = y_test
+
+x_train = np.concatenate((x_train, rev_x_train), axis=0)
+# x_test = np.concatenate((x_test, rev_x_test), axis=0)
+
+y_train = np.concatenate((y_train, y_train), axis=0)
+# y_test = np.concatenate((y_test, y_test), axis=0)
+
+print(x_train.shape, y_train.shape) # (120000, 28, 28) (120000,)
+print(x_test.shape, y_test.shape)   # (20000, 28, 28) (20000,)
 
 # 스케일링 1(Minmax)
 x_train = x_train/255.
 x_test = x_test/255.
+rev_x_test = rev_x_test/255.
 # print(np.max(x_train),np.min(x_train))    #1.0 0.0
 # print(np.max(x_test),np.min(x_test))      #1.0 0.0
 
@@ -47,10 +58,12 @@ x_test = x_test/255.
 
 x_train = x_train.reshape(-1,28,28,1)
 x_test = x_test.reshape(-1,28,28,1)
+rev_x_test = rev_x_test.reshape(-1,28,28,1)
 
 ohe = OneHotEncoder(sparse_output=False)
 y_train = ohe.fit_transform(y_train.reshape(-1,1))
 y_test = ohe.transform(y_test.reshape(-1,1))
+rev_y_test = ohe.transform(rev_y_test.reshape(-1,1))
 
 #2. 모델 구성
 model = Sequential()
@@ -98,6 +111,13 @@ y_pred = model.predict(x_test)
 
 y_pred = np.argmax(y_pred,axis=1)
 y_test = np.argmax(y_test,axis=1)
+acc = accuracy_score(y_test,y_pred)
+print(acc)
+
+rev_y_pred = model.predict(rev_x_test)
+
+rev_x_test = np.argmax(rev_x_test,axis=1)
+rev_y_test = np.argmax(rev_y_test,axis=1)
 acc = accuracy_score(y_test,y_pred)
 print(acc)
 

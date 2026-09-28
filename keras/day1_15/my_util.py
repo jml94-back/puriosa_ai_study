@@ -7,7 +7,7 @@ import sys
 import numpy as np
 from sklearn.metrics import mean_squared_error
 
-def record_model_csv(model, data_shape, batch_size, history, training_time, test_loss, random_num="-1", sub_score="", csv_file_path="model_history_log.csv", train_ration = 0.7, learning_rate = -1):
+def record_model_csv(model, data_shape, batch_size, history, training_time, test_loss, random_num="-1", sub_score="", csv_file_path="model_history_log.csv", train_ration = 0.7):
     # 1. 현재날짜시간
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     

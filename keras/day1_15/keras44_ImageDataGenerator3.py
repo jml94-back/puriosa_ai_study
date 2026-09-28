@@ -113,7 +113,7 @@ model.compile(loss = "binary_crossentropy", optimizer = "adam", metrics=["acc"])
 
 es = EarlyStopping(
     monitor = 'val_loss', mode = "min", 
-    patience = 100, restore_best_weights= True, 
+    patience = 70, restore_best_weights= True, 
 )
 
 mcp = ModelCheckpoint(
