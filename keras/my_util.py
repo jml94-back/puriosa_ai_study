@@ -159,9 +159,18 @@ def leaveTop(path, prefix, subfix, count, mode = "min"):
     return deleted_files
 
 def split_x(dataset, timestep):
-    size = len(dataset)-timestep+1
-    x = []
-    for i in range(size):
-        subset = dataset[i:(i+timestep)]
-        x.append(subset)
-    return np.array(x)
+    # size = len(dataset)-timestep+1
+    # x = []
+    # for i in range(size):
+    #     subset = dataset[i:(i+timestep)]
+    #     x.append(subset)
+    # return np.array(x)
+    # 입력 데이터가 확실하게 넘파이 배열이 되도록 변환
+    dataset = np.asarray(dataset)
+    
+    # 윈도우 개수 계산
+    shape = (dataset.shape[0] - timestep + 1, timestep) + dataset.shape[1:]
+    strides = (dataset.strides[0],) + dataset.strides
+    
+    # 메모리 복사 없이 뷰(View)를 생성하여 리턴
+    return np.lib.stride_tricks.as_strided(dataset, shape=shape, strides=strides)
