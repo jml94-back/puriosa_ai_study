@@ -174,3 +174,25 @@ def split_x(dataset, timestep):
     
     # 메모리 복사 없이 뷰(View)를 생성하여 리턴
     return np.lib.stride_tricks.as_strided(dataset, shape=shape, strides=strides)
+
+def onehot(x, num_classes=None):
+    """
+    임의의 N차원 정수 배열 x를 원-핫 인코딩합니다.
+    (N차원 -> N+1차원)
+    
+    Parameters:
+        x: 리스트, NumPy 배열, 또는 Keras/PyTorch 정수 시퀀스
+        num_classes: 클래스(단어장) 개수. 
+                     지정하지 않으면 x의 최댓값 + 1 로 자동 설정됩니다.
+                     
+    Returns:
+        NumPy float32 원-핫 인코딩 배열
+    """
+    x_arr = np.array(x, dtype=np.int32)
+    
+    # num_classes 미지정 시 x의 최댓값 + 1로 설정 (패딩 0 포함)
+    if num_classes is None:
+        num_classes = np.max(x_arr) + 1
+        
+    # np.eye 방식: 인덱스 추출을 통해 임의 차원에 맞춰 한 번에 원-핫 생성
+    return np.eye(num_classes, dtype=np.float32)[x_arr]

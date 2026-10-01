@@ -65,11 +65,11 @@ model.add(Dense(256))
 model.add(Dropout(0.1))
 model.add(Dense(144))
 model.summary()
-learning_rate = 0.01
+learning_rate = 0.02
 
 es = EarlyStopping(
     monitor = 'val_loss', mode = "min", 
-    patience = 50, restore_best_weights= True, 
+    patience = 100, restore_best_weights= True, 
 )
 
 mcp = ModelCheckpoint(
