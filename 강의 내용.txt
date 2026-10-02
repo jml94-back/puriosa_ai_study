@@ -97,3 +97,9 @@ TimeSteps
 RNN  - 첫 값을 까먹음
 LSTM - 장기 기억 서킷 추가
 GRU  - 구조 단순화
+
+day23
+벡터db
+문장을 숫자 벡터로 바꿔 검색한다
+chroma 관리 쉬움    collection  
+faiss  초고속 색인  index       

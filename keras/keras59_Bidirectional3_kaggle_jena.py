@@ -89,7 +89,7 @@ model.compile(loss = "mse", optimizer = Adam(learning_rate=learning_rate))
 batch_size = 2200
 
 start_time = time.time()
-history = model.fit(x_train,y_train, epochs=1000,verbose=0,batch_size=batch_size, validation_split=0.2, callbacks = [es,rlr,tqdm_callback,mcp])#
+history = model.fit(x_train,y_train, epochs=3,verbose=0,batch_size=batch_size, validation_split=0.2, callbacks = [es,rlr,tqdm_callback,mcp])#
 train_time = time.time() - start_time
 
 #4.

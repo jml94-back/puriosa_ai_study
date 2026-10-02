@@ -1,0 +1,2 @@
+﻿time,pyfile,data_shape,random_num,model,model_structure,loss,optimizer,epochs,batch_size,train_second,first_loss,last_loss,test_loss,sub_score,train_ration,total_params
+2026-10-02 16:46:15,keras62_2_imdb.py,"(21497, 400)",0,sequential,Embedding 200 -> LSTM 256(tanh) -> Dropout (0.1) -> Dense 64(gelu) -> 16(relu) -> 1(sigmoid),binary_crossentropy,Adam,558,1000,10547.5422,3.2563724517822266,0.6942123770713806,0.6724501252174377,0.5568296313285828,0,684449
