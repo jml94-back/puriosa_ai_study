@@ -26,5 +26,25 @@ vector_store = Chroma(
     persist_directory=DB_PATH,
     collection_name="chroma12",
 )
-print(vector_store._collection.count())
 
+query = "삼성전자의 창업주는 누구인가요?"
+retriever = vector_store.as_retriever(search_kwarges={"k":4})
+aaa = retriever.invoke(query)
+
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(
+    model="gpt-5-nano",
+    temperature=0, #0:있는 그대로, 1:창의적으로
+    max_completion_tokens=1000,
+    api_key=api_key,
+    base_url=base_url,
+)
+
+query_with_context=f"""
+{aaa[0].page_content}\n\n
+위 내용을 근거하여 다음 질문에 답변하세요.\n\n{query}
+"""
+
+response = model.invoke(query_with_context)
+print(response.content)
