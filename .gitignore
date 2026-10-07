@@ -2,7 +2,8 @@
 **/__pycache__/
 **/.vscode/
 .vscode/
-_save/
+_save
 _data/image/
 _data/npy/
 .env
+_db/**

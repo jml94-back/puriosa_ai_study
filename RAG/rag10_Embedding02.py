@@ -28,7 +28,7 @@ vector = embeddings.embed_query(prompt)
 print(vector)
 print("=================================================")
 print("임베딩 벡터의 차원:",len(vector)) #임베딩 벡터의 차원: 1536
-
+exit()
 
 model = ChatOpenAI(
     model_name="gpt-5.6-terra",

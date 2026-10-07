@@ -19,10 +19,10 @@ train_csv = pd.read_csv(path+"/jena_climate_2009_2016.csv")
 
 
 #1,2,11,12월 추출
-train_csv['Date Time'] = pd.to_datetime(train_csv['Date Time'], format='%d.%m.%Y %H:%M:%S')
-month = train_csv['Date Time'].dt.month.to_numpy()
-winter_months = [11, 12, 1, 2]
-winter_rows = np.isin(month, winter_months)
+# train_csv['Date Time'] = pd.to_datetime(train_csv['Date Time'], format='%d.%m.%Y %H:%M:%S')
+# month = train_csv['Date Time'].dt.month.to_numpy()
+# winter_months = [11, 12, 1, 2]
+# winter_rows = np.isin(month, winter_months)
 
 x= train_csv.drop(["Date Time","T (degC)"], axis=1)
 print(x.shape)
@@ -30,7 +30,8 @@ print(x.shape)
 # print(x.shape)#(420551, 13)
 
 scaler = StandardScaler()
-scaler.fit(x[winter_rows])
+scaler.fit(x)
+# scaler.fit(x[winter_rows])
 x = scaler.transform(x)
 
 y = train_csv["T (degC)"]
@@ -41,12 +42,12 @@ window_size = 144
 x = my_util.split_x(x, window_size)
 y = my_util.split_x(y, window_size)
 
-winter_counts = np.concatenate(([0], np.cumsum(winter_rows, dtype=np.int32)))
-valid_windows = (
-	winter_counts[window_size:] - winter_counts[:-window_size]
-) == window_size
-x = x[valid_windows]
-y = y[valid_windows]
+# winter_counts = np.concatenate(([0], np.cumsum(winter_rows, dtype=np.int32)))
+# valid_windows = (
+# 	winter_counts[window_size:] - winter_counts[:-window_size]
+# ) == window_size
+# x = x[valid_windows]
+# y = y[valid_windows]
 
 print(x.shape)
 print(y.shape)
