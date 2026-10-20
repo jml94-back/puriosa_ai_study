@@ -103,3 +103,9 @@ day23
 문장을 숫자 벡터로 바꿔 검색한다
 chroma 관리 쉬움    collection  
 faiss  초고속 색인  index       
+
+day28
+전이 학습 - Transfer Learning
+Feature Extraction - 사전학습된 모델을 고정된 특징 추출기로 활용
+Pre-trained Model - 사전 학습 모델
+사전 학습 모델 기반의 파인 튜닝
